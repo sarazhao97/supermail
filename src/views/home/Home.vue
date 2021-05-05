@@ -33,9 +33,7 @@ import NavBar from 'components/common/navbar/NavBar'
 import TabControl from 'components/content/tabControl/TabControl'
 import GoodsList from 'components/content/goods/GoodsList'
 import Scroll from 'components/common/scroll/Scroll'
-import BackTop from 'components/content/backTop/BackTop'
-import {debounce} from 'common/utils'
-
+import {itemListenerMixin,backTopMixin} from 'common/mixin'
 
 import HomeSwiper from './childComps/HomeSwiper'
 import RecommendView from './childComps/RecommendView'
@@ -56,7 +54,7 @@ export default {
     RecommendView,
     FeatureView,
     Scroll,
-    BackTop
+    
  },
  data(){
      return {
@@ -69,12 +67,13 @@ export default {
          
        },
        currentType:'pop',
-       isShowBackTop:false,
        tabOffsetTop:0,
        isTabFixed:false,
-       saveY:0
+       saveY:0,
+       
      }
  },
+mixins:[itemListenerMixin,backTopMixin],
  computed:{
    showGoods(){
      return this.goods[this.currentType].list
@@ -86,7 +85,9 @@ this.$refs.scroll.ScrollFresh()
  },
  deactivated(){
    this.saveY=this.$refs.scroll.getScrollY()
-  //  console.log(this.saveY);
+  // 取消全局事件的监听
+   this.$bus.$off('itemImageLoad',this.itemImgListener)
+
  },
  created(){
     this.getHomeMultidata(),
@@ -96,10 +97,7 @@ this.$refs.scroll.ScrollFresh()
    
  },
  mounted(){
-    const refresh= debounce(this.$refs.scroll.ScrollFresh,500)
-    this.$bus.$on('itemImageLoad',()=>{
-      refresh()
-    })
+
  },
  methods:{
    /* 事件监听相关方法 */
@@ -124,10 +122,11 @@ this.$refs.scroll.ScrollFresh()
    },
    contentScroll(position){
     //  console.log(position);
-   this.isShowBackTop=(-position.y) > 1000 
+   
     this.isTabFixed=(-position.y) > this.tabOffsetTop 
-    
+    this.listenShowBackTop(position)
    },
+   
    loadMore(){
      this.getHomeGoods(this.currentType)
    },
